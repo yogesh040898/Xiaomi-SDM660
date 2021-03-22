@@ -621,7 +621,8 @@ static void msm_isp_update_framedrop_reg(struct msm_vfe_axi_stream *stream_info,
 				MSM_VFE_STREAM_STOP_PERIOD;
 	}
 
-	if (stream_info->undelivered_request_cnt > 0)
+	if (stream_info->undelivered_request_cnt > 0 &&
+		drop_reconfig != 1)
 		stream_info->current_framedrop_period =
 			MSM_VFE_STREAM_STOP_PERIOD;
 	/*
@@ -694,6 +695,7 @@ void msm_isp_process_reg_upd_epoch_irq(struct vfe_device *vfe_dev,
 				msm_isp_update_framedrop_reg(stream_info,
 					drop_reconfig);
 			}
+
 			break;
 		default:
 			WARN(1, "Invalid irq %d\n", irq);
@@ -3612,6 +3614,7 @@ static int msm_isp_request_frame(struct vfe_device *vfe_dev,
 		vfe_ops.axi_ops.get_pingpong_status(vfe_dev);
 
 	/* As MCT is still processing it, need to drop the additional requests*/
+
 	if (vfe_dev->isp_page->drop_reconfig && do_drop_frame) {
 		pr_err("%s: MCT has not yet delayed %d drop request %d\n",
 			__func__, vfe_dev->isp_page->drop_reconfig, frame_id);
@@ -3777,6 +3780,7 @@ static int msm_isp_request_frame(struct vfe_device *vfe_dev,
 			}
 			pr_err_ratelimited("%s:%d fail to cfg HAL buffer stream %x\n",
 				__func__, __LINE__, stream_info->stream_id);
+
 			return rc;
 		}
 
@@ -3823,6 +3827,9 @@ static int msm_isp_request_frame(struct vfe_device *vfe_dev,
 			}
 			pr_err_ratelimited("%s:%d fail to cfg HAL buffer\n",
 				__func__, __LINE__);
+			queue_req->cmd_used = 0;
+			list_del(&queue_req->list);
+			stream_info->request_q_cnt--;
 			return rc;
 		}
 	} else {

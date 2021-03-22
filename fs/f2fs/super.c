@@ -2456,6 +2456,8 @@ static int sanity_check_raw_super(struct f2fs_sb_info *sbi,
 	block_t total_sections, blocks_per_seg;
 	struct f2fs_super_block *raw_super = (struct f2fs_super_block *)
 					(bh->b_data + F2FS_SUPER_OFFSET);
+	struct super_block *sb = sbi->sb;
+
 	unsigned int blocksize;
 	size_t crc_offset = 0;
 	__u32 crc = 0;
@@ -2705,6 +2707,7 @@ int f2fs_sanity_check_ckpt(struct f2fs_sb_info *sbi)
 
 	sit_bitmap_size = le32_to_cpu(ckpt->sit_ver_bitmap_bytesize);
 	nat_bitmap_size = le32_to_cpu(ckpt->nat_ver_bitmap_bytesize);
+	log_blocks_per_seg = le32_to_cpu(raw_super->log_blocks_per_seg);
 
 	if (sit_bitmap_size != ((sit_segs / 2) << log_blocks_per_seg) / 8 ||
 		nat_bitmap_size != ((nat_segs / 2) << log_blocks_per_seg) / 8) {
@@ -2712,7 +2715,6 @@ int f2fs_sanity_check_ckpt(struct f2fs_sb_info *sbi)
 			 sit_bitmap_size, nat_bitmap_size);
 		return 1;
 	}
-
 	cp_pack_start_sum = __start_sum_addr(sbi);
 	cp_payload = __cp_payload(sbi);
 	if (cp_pack_start_sum < cp_payload + 1 ||
@@ -3267,7 +3269,6 @@ try_onemore:
 		f2fs_err(sbi, "Failed to get valid F2FS checkpoint");
 		goto free_meta_inode;
 	}
-
 	if (__is_set_ckpt_flags(F2FS_CKPT(sbi), CP_QUOTA_NEED_FSCK_FLAG))
 		set_sbi_flag(sbi, SBI_QUOTA_NEED_REPAIR);
 	if (__is_set_ckpt_flags(F2FS_CKPT(sbi), CP_DISABLED_QUICK_FLAG)) {

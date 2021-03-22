@@ -244,6 +244,8 @@ int f2fs_ra_meta_pages(struct f2fs_sb_info *sbi, block_t start, int nrpages,
 					blkno * NAT_ENTRY_PER_BLOCK);
 			break;
 		case META_SIT:
+			if (unlikely(blkno >= TOTAL_SEGS(sbi)))
+				goto out;
 			/* get sit block addr */
 			fio.new_blkaddr = current_sit_addr(sbi,
 					blkno * SIT_ENTRY_PER_BLOCK);
@@ -840,7 +842,6 @@ static int get_checkpoint_version(struct f2fs_sb_info *sbi, block_t cp_addr,
 	*version = cur_cp_version(*cp_block);
 	return 0;
 }
-
 static struct page *validate_checkpoint(struct f2fs_sb_info *sbi,
 				block_t cp_addr, unsigned long long *version)
 {
@@ -852,6 +853,7 @@ static struct page *validate_checkpoint(struct f2fs_sb_info *sbi,
 	err = get_checkpoint_version(sbi, cp_addr, &cp_block,
 					&cp_page_1, version);
 	if (err)
+
 		return NULL;
 
 	if (le32_to_cpu(cp_block->cp_pack_total_block_count) >
@@ -860,13 +862,14 @@ static struct page *validate_checkpoint(struct f2fs_sb_info *sbi,
 			  le32_to_cpu(cp_block->cp_pack_total_block_count));
 		goto invalid_cp;
 	}
+
 	pre_version = *version;
 
 	cp_addr += le32_to_cpu(cp_block->cp_pack_total_block_count) - 1;
 	err = get_checkpoint_version(sbi, cp_addr, &cp_block,
 					&cp_page_2, version);
 	if (err)
-		goto invalid_cp;
+		goto invalid_cp2;
 	cur_version = *version;
 
 	if (cur_version == pre_version) {
@@ -874,8 +877,9 @@ static struct page *validate_checkpoint(struct f2fs_sb_info *sbi,
 		f2fs_put_page(cp_page_2, 1);
 		return cp_page_1;
 	}
+invalid_cp2:
 	f2fs_put_page(cp_page_2, 1);
-invalid_cp:
+invalid_cp1:
 	f2fs_put_page(cp_page_1, 1);
 	return NULL;
 }
@@ -925,6 +929,11 @@ int f2fs_get_valid_checkpoint(struct f2fs_sb_info *sbi)
 
 	cp_block = (struct f2fs_checkpoint *)page_address(cur_page);
 	memcpy(sbi->ckpt, cp_block, blk_size);
+
+	/* Sanity checking of checkpoint */
+	if (f2fs_sanity_check_ckpt(sbi))
+		goto free_fail_no_cp;
+
 
 	if (cur_page == cp1)
 		sbi->cur_cp_pack = 1;

@@ -858,6 +858,7 @@ struct vfe_device {
 
 	/* irq info */
 	uint32_t irq_sof_id;
+
 };
 
 struct vfe_parent_device {

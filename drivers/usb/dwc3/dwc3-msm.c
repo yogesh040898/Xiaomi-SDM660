@@ -281,7 +281,6 @@ struct dwc3_msm {
 	struct mutex suspend_resume_mutex;
 
 	enum usb_device_speed override_usb_speed;
-
 	bool core_init_failed;
 };
 
@@ -3784,7 +3783,8 @@ static int dwc3_otg_start_host(struct dwc3_msm *mdwc, int on)
 		/* wait for LPM, to ensure h/w is reset after stop_host */
 		set_bit(WAIT_FOR_LPM, &mdwc->inputs);
 
-		pm_runtime_put_sync_suspend(mdwc->dev);
+		pm_runtime_mark_last_busy(mdwc->dev);
+		pm_runtime_put_sync_autosuspend(mdwc->dev);
 		dbg_event(0xFF, "StopHost psync",
 			atomic_read(&mdwc->dev->power.usage_count));
 	}

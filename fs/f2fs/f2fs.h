@@ -269,7 +269,7 @@ struct cp_control {
 };
 
 /*
- * indicate meta/data type
+ * For CP/NAT/SIT/SSA readahead
  */
 enum {
 	META_CP,
@@ -2975,7 +2975,6 @@ static inline void f2fs_clear_page_private(struct page *page)
 	ClearPagePrivate(page);
 	f2fs_put_page(page, 0);
 }
-
 /*
  * file.c
  */
@@ -3073,6 +3072,8 @@ int f2fs_quota_sync(struct super_block *sb, int type);
 void f2fs_quota_off_umount(struct super_block *sb);
 int f2fs_commit_super(struct f2fs_sb_info *sbi, bool recover);
 int f2fs_sync_fs(struct super_block *sb, int sync);
+extern __printf(3, 4)
+void f2fs_msg(struct super_block *sb, const char *level, const char *fmt, ...);
 int f2fs_sanity_check_ckpt(struct f2fs_sb_info *sbi);
 
 /*

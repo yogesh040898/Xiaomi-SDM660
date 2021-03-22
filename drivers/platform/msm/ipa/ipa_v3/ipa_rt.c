@@ -1552,6 +1552,7 @@ int ipa3_reset_rt(enum ipa_ip_type ip, bool user_only)
 						IPAERR_RL(
 						"Header already deleted\n");
 						mutex_unlock(&ipa3_ctx->lock);
+
 						return -EINVAL;
 					}
 				} else if (rule->proc_ctx) {
@@ -1564,6 +1565,7 @@ int ipa3_reset_rt(enum ipa_ip_type ip, bool user_only)
 						IPAERR_RL(
 						"Proc entry already deleted\n");
 						mutex_unlock(&ipa3_ctx->lock);
+
 						return -EINVAL;
 					}
 				}

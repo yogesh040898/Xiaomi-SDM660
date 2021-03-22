@@ -2053,6 +2053,9 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 					&(session[session_id].session_lock),
 					flags);
 				return 0;
+			} else {
+				pr_err("%s: payload size of %x is less than expected.\n",
+					__func__, data->payload_size);
 			}
 			if ((is_adsp_reg_event(payload[0]) >= 0) ||
 			    (payload[0] == ASM_STREAM_CMD_SET_PP_PARAMS_V2) ||
