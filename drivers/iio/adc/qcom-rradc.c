@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017, 2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -193,7 +193,8 @@
 #define FG_RR_ADC_STS_CHANNEL_READING_MASK	0x3
 #define FG_RR_ADC_STS_CHANNEL_STS		0x2
 
-#define FG_RR_CONV_CONTINUOUS_TIME_MIN_MS	50
+#define FG_RR_CONV_CONTINUOUS_TIME_MIN_MS       50
+#define FG_RR_CONV_CONT_CBK_TIME_MIN_MS	10
 #define FG_RR_CONV_MAX_RETRY_CNT		50
 #define FG_RR_TP_REV_VERSION1		21
 #define FG_RR_TP_REV_VERSION2		29
@@ -240,7 +241,9 @@ struct rradc_chip {
 	struct pmic_revid_data		*pmic_fab_id;
 	int volt;
 	struct power_supply		*usb_trig;
+
 #ifdef CONFIG_MACH_XIAOMI_TULIP
+
 	struct power_supply		*batt_psy;
 	struct power_supply		*bms_psy;
 	struct notifier_block		nb;
@@ -813,7 +816,11 @@ static int rradc_check_status_ready_with_retry(struct rradc_chip *chip,
 			break;
 		}
 
-		msleep(FG_RR_CONV_CONTINUOUS_TIME_MIN_MS);
+		if ((chip->conv_cbk) && (prop->channel == RR_ADC_USBIN_V))
+			msleep(FG_RR_CONV_CONT_CBK_TIME_MIN_MS);
+		else
+			msleep(FG_RR_CONV_CONTINUOUS_TIME_MIN_MS);
+
 		retry_cnt++;
 		rc = rradc_read(chip, status, buf, 1);
 		if (rc < 0) {
@@ -1193,7 +1200,6 @@ static int rradc_psy_notifier_cb(struct notifier_block *nb,
 	return NOTIFY_OK;
 }
 #endif
-
 static const struct iio_info rradc_info = {
 	.read_raw	= &rradc_read_raw,
 	.driver_module	= THIS_MODULE,
@@ -1319,6 +1325,20 @@ static int rradc_probe(struct platform_device *pdev)
 	chip->usb_trig = power_supply_get_by_name("usb");
 	if (!chip->usb_trig)
 		pr_debug("Error obtaining usb power supply\n");
+
+	chip->batt_psy = power_supply_get_by_name("battery");
+	if (!chip->batt_psy)
+		pr_debug("Error obtaining battery power supply\n");
+
+	chip->bms_psy = power_supply_get_by_name("bms");
+	if (!chip->bms_psy)
+		pr_debug("Error obtaining bms power supply\n");
+
+	chip->nb.notifier_call = rradc_psy_notifier_cb;
+	rc = power_supply_reg_notifier(&chip->nb);
+	if (rc < 0)
+		pr_err("Error registering psy notifier rc = %d\n", rc);
+	INIT_WORK(&chip->psy_notify_work, psy_notify_work);
 
 	return devm_iio_device_register(dev, indio_dev);
 }
