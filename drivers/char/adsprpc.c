@@ -333,7 +333,6 @@ struct fastrpc_file {
 	struct dentry *debugfs_file;
 	struct mutex map_mutex;
 	char *debug_buf;
-
 	/* Identifies the device (MINOR_NUM_DEV / MINOR_NUM_SECURE_DEV) */
 	int dev_minor;
 };
@@ -685,7 +684,6 @@ static int fastrpc_mmap_create(struct fastrpc_file *fl, int fd, unsigned attr,
 	struct fastrpc_apps *me = &gfa;
 	struct fastrpc_session_ctx *sess;
 	struct fastrpc_apps *apps = fl->apps;
-	int cid = fl->cid;
 	struct fastrpc_channel_ctx *chan = NULL;
 	struct fastrpc_mmap *map = NULL;
 	struct dma_attrs attrs;
@@ -1763,12 +1761,6 @@ static int fastrpc_internal_invoke(struct fastrpc_file *fl, uint32_t mode,
 		}
 	}
 
-	VERIFY(err, fl->sctx != NULL);
-	if (err)
-		goto bail;
-	VERIFY(err, fl->cid >= 0 && fl->cid < NUM_CHANNELS);
-	if (err)
-		goto bail;
 	if (!kernel) {
 		VERIFY(err, 0 == context_restore_interrupted(fl, inv,
 								&ctx));
@@ -2777,6 +2769,9 @@ static ssize_t fastrpc_debugfs_read(struct file *filp, char __user *buffer,
 			len += scnprintf(fileinfo + len,
 				 DEBUGFS_SIZE - len, "|%-9d",
 				 chan->ssrcount);
+			len += scnprintf(fileinfo + len,
+					DEBUGFS_SIZE - len, "%s %d\n",
+					"secure:", chan->secure);
 			for (j = 0; j < chan->sesscount; j++) {
 				sess_used += chan->session[j].used;
 				}
@@ -2870,6 +2865,9 @@ static ssize_t fastrpc_debugfs_read(struct file *filp, char __user *buffer,
 			"0x%-20lX|0x%-20llX|0x%-20zu\n\n",
 			map->va, map->phys,
 			map->size);
+		len += scnprintf(fileinfo + len, DEBUGFS_SIZE - len,
+				"%s %d\n\n",
+				"DEV_MINOR:", fl->dev_minor);
 		}
 		len += scnprintf(fileinfo + len, DEBUGFS_SIZE - len,
 			"%-20s|%-20s|%-20s|%-20s\n",
@@ -2897,22 +2895,6 @@ static ssize_t fastrpc_debugfs_read(struct file *filp, char __user *buffer,
 			map->secure, map->attr);
 		}
 		len += scnprintf(fileinfo + len, DEBUGFS_SIZE - len,
-			"\n======%s %s %s======\n", title,
-			" LIST OF CACHED BUFS ", title);
-		spin_lock(&fl->hlock);
-		len += scnprintf(fileinfo + len, DEBUGFS_SIZE - len,
-			"%-19s|%-19s|%-19s\n",
-			"virt", "phys", "size");
-		len += scnprintf(fileinfo + len, DEBUGFS_SIZE - len,
-			"%s%s%s%s%s\n", single_line, single_line,
-			single_line, single_line, single_line);
-		hlist_for_each_entry_safe(buf, n, &fl->cached_bufs, hn) {
-			len += scnprintf(fileinfo + len,
-			DEBUGFS_SIZE - len,
-			"0x%-17p|0x%-17llX|%-19zu\n",
-			buf->virt, (uint64_t)buf->phys, buf->size);
-		}
-		len += scnprintf(fileinfo + len, DEBUGFS_SIZE - len,
 			"\n%s %s %s\n", title,
 			" LIST OF PENDING SMQCONTEXTS ", title);
 
@@ -2932,7 +2914,6 @@ static ssize_t fastrpc_debugfs_read(struct file *filp, char __user *buffer,
 		len += scnprintf(fileinfo + len, DEBUGFS_SIZE - len,
 			"\n%s %s %s\n", title,
 			" LIST OF INTERRUPTED SMQCONTEXTS ", title);
-
 
 		len += scnprintf(fileinfo + len, DEBUGFS_SIZE - len,
 			"%-20s|%-10s|%-10s|%-10s|%-20s\n",

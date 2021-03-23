@@ -2456,7 +2456,7 @@ static int sanity_check_raw_super(struct f2fs_sb_info *sbi,
 	block_t total_sections, blocks_per_seg;
 	struct f2fs_super_block *raw_super = (struct f2fs_super_block *)
 					(bh->b_data + F2FS_SUPER_OFFSET);
-	struct super_block *sb = sbi->sb;
+	//struct super_block *sb = sbi->sb;
 
 	unsigned int blocksize;
 	size_t crc_offset = 0;

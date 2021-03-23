@@ -2314,6 +2314,7 @@ bool f2fs_is_checkpointed_data(struct f2fs_sb_info *sbi, block_t blkaddr)
 	struct seg_entry *se;
 	bool is_cp = false;
 
+
 	if (!__is_valid_data_blkaddr(blkaddr))
 		return true;
 
@@ -3472,7 +3473,6 @@ void f2fs_wait_on_block_writeback(struct inode *inode, block_t blkaddr)
 	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
 	struct page *cpage;
 
-
 	if (!f2fs_post_read_required(inode))
 		return;
 
@@ -4220,7 +4220,18 @@ static int build_sit_entries(struct f2fs_sb_info *sbi)
 				total_node_blocks += se->valid_blocks;
 
 			/* build discard map only one time */
-
+//<<<<<<< HEAD
+			if (is_set_ckpt_flags(sbi, CP_TRIMMED_FLAG)) {
+				memset(se->discard_map, 0xff,
+					SIT_VBLOCK_MAP_SIZE);
+			} else {
+				memcpy(se->discard_map,
+					se->cur_valid_map,
+					SIT_VBLOCK_MAP_SIZE);
+				sbi->discard_blks +=
+					sbi->blocks_per_seg -
+					se->valid_blocks;
+/*=======
 			if (f2fs_discard_en(sbi)) {
 				if (is_set_ckpt_flags(sbi, CP_TRIMMED_FLAG)) {
 					memset(se->discard_map, 0xff,
@@ -4233,6 +4244,7 @@ static int build_sit_entries(struct f2fs_sb_info *sbi)
 						sbi->blocks_per_seg -
 						se->valid_blocks;
 				}
+>>>>>>> 7ce3eeca3360577db5284c3ff30a63e26adddcfd*/
 			}
 
 			if (__is_large_section(sbi))

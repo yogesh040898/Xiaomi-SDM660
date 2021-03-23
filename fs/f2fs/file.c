@@ -437,8 +437,7 @@ static loff_t f2fs_seek_block(struct file *file, loff_t offset, int whence)
 				goto fail;
 			}
 
-			if (__found_offset(F2FS_I_SB(inode), blkaddr, dirty,
-							pgofs, whence)) {
+			if (__found_offset(blkaddr, dirty, pgofs, whence)) {
 				f2fs_put_dnode(&dn);
 				goto found;
 			}
@@ -536,6 +535,7 @@ void f2fs_truncate_data_blocks_range(struct dnode_of_data *dn, int count)
 			!f2fs_is_valid_blkaddr(sbi, blkaddr,
 					DATA_GENERIC_ENHANCE))
 			continue;
+
 		f2fs_invalidate_blocks(sbi, blkaddr);
 		if (dn->ofs_in_node == 0 && IS_INODE(dn->node_page))
 			clear_inode_flag(dn->inode, FI_FIRST_BLOCK_WRITTEN);

@@ -1,8 +1,6 @@
 /*
  * Copyright (C) 2015 - ARM Ltd
  * Author: Marc Zyngier <marc.zyngier@arm.com>
- * Copyright (C) 2015 - ARM Ltd
- * Author: Marc Zyngier <marc.zyngier@arm.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -22,21 +20,6 @@
  /*
  * Author: Will Deacon <will.deacon@arm.com>
  */
-
-#include <linux/init.h>
-#include <linux/linkage.h>
-#include <linux/const.h>
-#include <asm/page.h>
-
-	.globl vdso32_start, vdso32_end
-	.section .rodata
-	.balign PAGE_SIZE
-vdso32_start:
-	.incbin "arch/arm64/kernel/vdso32/vdso.so"
-	.balign PAGE_SIZE
-vdso32_end:
-
-	.previous
 
 #include <asm/fpsimdmacros.h>
 

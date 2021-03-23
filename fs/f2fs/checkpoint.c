@@ -853,22 +853,21 @@ static struct page *validate_checkpoint(struct f2fs_sb_info *sbi,
 	err = get_checkpoint_version(sbi, cp_addr, &cp_block,
 					&cp_page_1, version);
 	if (err)
-
 		return NULL;
 
 	if (le32_to_cpu(cp_block->cp_pack_total_block_count) >
 					sbi->blocks_per_seg) {
 		f2fs_warn(sbi, "invalid cp_pack_total_block_count:%u",
 			  le32_to_cpu(cp_block->cp_pack_total_block_count));
-		goto invalid_cp;
+		goto invalid_cp1;
 	}
-
 	pre_version = *version;
 
 	cp_addr += le32_to_cpu(cp_block->cp_pack_total_block_count) - 1;
 	err = get_checkpoint_version(sbi, cp_addr, &cp_block,
 					&cp_page_2, version);
 	if (err)
+
 		goto invalid_cp2;
 	cur_version = *version;
 
@@ -933,7 +932,6 @@ int f2fs_get_valid_checkpoint(struct f2fs_sb_info *sbi)
 	/* Sanity checking of checkpoint */
 	if (f2fs_sanity_check_ckpt(sbi))
 		goto free_fail_no_cp;
-
 
 	if (cur_page == cp1)
 		sbi->cur_cp_pack = 1;

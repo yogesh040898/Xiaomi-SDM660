@@ -72,8 +72,8 @@ static bool __written_first_block(struct f2fs_inode *ri)
 
 	if (!__is_valid_data_blkaddr(addr))
 		return 1;
-	if (!f2fs_is_valid_blkaddr(sbi, addr, DATA_GENERIC_ENHANCE))
-		return -EFSCORRUPTED;
+	/*if (!f2fs_is_valid_blkaddr(sbi, addr, DATA_GENERIC_ENHANCE))
+		return -EFSCORRUPTED;*/
 	return 0;
 }
 
@@ -280,7 +280,6 @@ static bool sanity_check_inode(struct inode *inode, struct page *node_page)
 			  __func__, inode->i_ino, inode->i_mode);
 		return false;
 	}
-
 	return true;
 }
 
@@ -291,7 +290,7 @@ static int do_read_inode(struct inode *inode)
 	struct page *node_page;
 	struct f2fs_inode *ri;
 	projid_t i_projid;
-	int err;
+	//int err;
 
 	/* Check if ino is within scope */
 	if (f2fs_check_nid_range(sbi, inode->i_ino))
@@ -359,7 +358,6 @@ static int do_read_inode(struct inode *inode)
 		f2fs_put_page(node_page, 1);
 		return -EFSCORRUPTED;
 	}
-
 	/* check data exist */
 	if (f2fs_has_inline_data(inode) && !f2fs_exist_data(inode))
 		__recover_inline_status(inode, node_page);
@@ -373,15 +371,8 @@ static int do_read_inode(struct inode *inode)
 	/* get rdev by using inline_info */
 	__get_inode_rdev(inode, ri);
 
-	if (S_ISREG(inode->i_mode)) {
-		err = __written_first_block(sbi, ri);
-		if (err < 0) {
-			f2fs_put_page(node_page, 1);
-			return err;
-		}
-		if (!err)
-			set_inode_flag(inode, FI_FIRST_BLOCK_WRITTEN);
-	}
+	if (__written_first_block(ri))
+		set_inode_flag(inode, FI_FIRST_BLOCK_WRITTEN);
 
 	if (!f2fs_need_inode_block_update(sbi, inode->i_ino))
 		fi->last_disk_size = inode->i_size;

@@ -13,7 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
  *
  * Author: Will Deacon <will.deacon@arm.com>
  */
@@ -23,17 +22,12 @@
 #include <linux/const.h>
 #include <asm/page.h>
 
-#include <asm/fpsimdmacros.h>
+	.globl vdso32_start, vdso32_end
+	.section .rodata
+	.balign PAGE_SIZE
+vdso32_start:
+	.incbin "arch/arm64/kernel/vdso32/vdso.so"
+	.balign PAGE_SIZE
+vdso32_end:
 
-	.text
-	.pushsection	.hyp.text, "ax"
-
-ENTRY(__fpsimd_save_state)
-	fpsimd_save	x0, 1
-	ret
-ENDPROC(__fpsimd_save_state)
-
-ENTRY(__fpsimd_restore_state)
-	fpsimd_restore	x0, 1
-	ret
-ENDPROC(__fpsimd_restore_state)
+	.previous
